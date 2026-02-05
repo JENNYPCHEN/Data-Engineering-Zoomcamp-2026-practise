@@ -5,54 +5,30 @@ def main():
     # Database connection
     engine = create_engine('postgresql://root:root@localhost:5432/ny_taxi')
 
-    # Read a sample of the data
-    prefix = 'https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/'
-    df = pd.read_csv(prefix + 'yellow_tripdata_2021-01.csv.gz', nrows=100)
+    # Load taxi zone lookup
+    print("Loading taxi zone lookup...")
+    df_zones = pd.read_csv('taxi_zone_lookup.csv')
+    df_zones.to_sql(name='taxi_zones', con=engine, if_exists='replace', index=False)
+    print(f"Loaded {len(df_zones)} zones into taxi_zones table.")
 
-    # Display first rows
-    print(df.head())
+    # Load green taxi data
+    print("Loading green taxi data...")
+    df_green = pd.read_parquet('green_tripdata_2025-11.parquet')
+    print(f"Data shape: {df_green.shape}")
+    print(df_green.head())
 
-    # Check data types
-    print(df.dtypes)
+    # Create table and insert data in chunks to handle large data
+    df_green.head(0).to_sql(name='green_taxi_trips', con=engine, if_exists='replace', index=False)
+    print("Table green_taxi_trips created.")
 
-    # Check data shape
-    print(df.shape)
+    # Insert in chunks
+    chunk_size = 100000
+    for i in range(0, len(df_green), chunk_size):
+        chunk = df_green.iloc[i:i+chunk_size]
+        chunk.to_sql(name='green_taxi_trips', con=engine, if_exists='append', index=False)
+        print(f"Inserted chunk {i//chunk_size + 1}: {len(chunk)} rows")
 
-    # Create table using pandas (it will infer types)
-    # But to match the specified types, we can define dtypes
-    # For simplicity, let pandas handle it
-
-    # Read the full data in chunks
-    df_iter = pd.read_csv(prefix + 'yellow_tripdata_2021-01.csv.gz', iterator=True, chunksize=100000)
-
-    first_chunk = next(df_iter)
-
-    # Create table with first chunk (empty to define schema)
-    first_chunk.head(0).to_sql(
-        name="yellow_taxi_data",
-        con=engine,
-        if_exists="replace"
-    )
-
-    print("Table created")
-
-    # Insert first chunk
-    first_chunk.to_sql(
-        name="yellow_taxi_data",
-        con=engine,
-        if_exists="append"
-    )
-
-    print("Inserted first chunk:", len(first_chunk))
-
-    # Insert remaining chunks
-    for df_chunk in df_iter:
-        df_chunk.to_sql(
-            name="yellow_taxi_data",
-            con=engine,
-            if_exists="append"
-        )
-        print("Inserted chunk:", len(df_chunk))
+    print("All data loaded successfully.")
 
 if __name__ == "__main__":
     main()
