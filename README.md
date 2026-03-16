@@ -1,5 +1,7 @@
 #Data Engineering Zoomcamp ♥️ 2026 Thanks for passing by. This is one of my 2026 target to get to know more about data. This is my cocooning place for studying data engineering zoomcamp organised by DataTalksClub
 
+01: docker-terraform
+
 Question 1. Understanding Docker images
 Run docker with the python:3.13 image. Use an entrypoint bash to interact with the container.
 
@@ -46,3 +48,33 @@ WHERE lpep_pickup_datetime::date = DATE '2025-11-18'
 GROUP BY "PULocationID" , "Zone" order by count(*)desc ;
 
 Answer: East Harlem North
+
+Question 6: For the passengers picked up in the zone named "East Harlem North" in November 2025, which was the drop off zone that had the largest tip?
+
+Note: it's tip , not trip. We need the name of the zone, not the ID.
+
+SELECT 
+    g."DOLocationID",
+    g.tip_amount,
+    z."Zone"
+FROM green_taxi_trips g
+LEFT JOIN taxi_zones z 
+    ON g."DOLocationID" = z."LocationID"
+WHERE g.lpep_pickup_datetime >= DATE '2025-11-01'
+  AND g.lpep_pickup_datetime <  DATE '2025-12-01'
+  AND z."Zone" = 'East Harlem North'
+ORDER BY g.tip_amount DESC
+LIMIT 1;
+
+Answer: East Harlem North
+
+Question 7. Terraform Workflow
+Which of the following sequences, respectively, describes the workflow for:
+
+Downloading the provider plugins and setting up backend,
+Generating proposed changes and auto-executing the plan
+Remove all resources managed by terraform`
+
+Answer: terraform init, terraform apply -auto-approve, terraform destroy
+
+
